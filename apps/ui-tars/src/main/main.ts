@@ -57,14 +57,26 @@ const loadDevDebugTools = async () => {
   });
 
   import('electron-devtools-installer')
-    .then(({ default: installExtensionDefault, REACT_DEVELOPER_TOOLS }) => {
-      // @ts-ignore
-      const installExtension = installExtensionDefault?.default;
-      const extensions = [installExtension(REACT_DEVELOPER_TOOLS)];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .then((module: any) => {
+      // Handle both ESM default export and CommonJS patterns
+      const installExtension =
+        module.default?.default || module.default || module.installExtension;
+      const REACT_DEVELOPER_TOOLS =
+        module.REACT_DEVELOPER_TOOLS ||
+        module.default?.REACT_DEVELOPER_TOOLS ||
+        'fmkadmapgofadopljbjfkapdkoienihi'; // Chrome extension ID as fallback
 
-      return Promise.all(extensions)
-        .then((names) => logger.info('Added Extensions:', names.join(', ')))
-        .catch((err) =>
+      if (typeof installExtension !== 'function') {
+        logger.warn(
+          'electron-devtools-installer: installExtension is not a function, skipping',
+        );
+        return;
+      }
+
+      return installExtension(REACT_DEVELOPER_TOOLS)
+        .then((name: string) => logger.info('Added Extension:', name))
+        .catch((err: Error) =>
           logger.error('An error occurred adding extension:', err),
         );
     })

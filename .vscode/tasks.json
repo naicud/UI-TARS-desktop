@@ -1,0 +1,85 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "env": {
+      "PATH": "/opt/homebrew/opt/node@20/bin:${env:PATH}"
+    }
+  },
+  "tasks": [
+    {
+      "label": "Build Dependencies",
+      "type": "shell",
+      "command": "turbo",
+      "args": ["run", "build", "--filter=!ui-tars-desktop"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/apps/ui-tars"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*electron-vite.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
+      "group": "build"
+    },
+    {
+      "label": "Debug",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "debug"],
+      "options": {
+        "cwd": "${workspaceFolder}/apps/ui-tars"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*electron-vite.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
+      "group": "build"
+    },
+    {
+      "label": "TypeCheck",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "typecheck"],
+      "options": {
+        "cwd": "${workspaceFolder}/apps/ui-tars"
+      },
+      "problemMatcher": ["$tsc"],
+      "group": "build"
+    },
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "clean"],
+      "options": {
+        "cwd": "${workspaceFolder}/apps/ui-tars"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    }
+  ]
+}

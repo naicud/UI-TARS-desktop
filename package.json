@@ -1,12 +1,13 @@
 {
-  "name": "monorepo",
+  "name": "jarvis-monorepo",
   "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@9.10.0",
-  "description": "A GUI Agent application based on UI-TARS(Vision-Lanuage Model) that allows you to control your computer using natural language.",
+  "description": "Jarvis - An ultra-evolved AI for PC control via text and voice.",
   "main": "./dist/main/main.js",
-  "author": "ByteDance",
+  "author": "Daniel Naicu",
   "scripts": {
+    "preinstall": "node -e \"const v = parseInt(process.versions.node.split('.')[0]); if (v < 20 || v >= 25) { console.error('\\n❌ Node.js ' + process.versions.node + ' is not supported.\\n   This project requires Node.js 20.x - 24.x (LTS recommended).\\n   Please run: nvm use 20 or brew link node@20\\n'); process.exit(1); }\"",
     "commit": "oco",
     "bootstrap": "pnpm i",
     "dev:ui-tars": "turbo run ui-tars-desktop#dev",
@@ -53,6 +54,6 @@
     "typescript": "^5.7.2"
   },
   "engines": {
-    "node": ">=20.x"
+    "node": ">=20.0.0 <25.0.0"
   }
 }

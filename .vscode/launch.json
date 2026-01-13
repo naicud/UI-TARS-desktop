@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Electron: Main (Debug)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/ui-tars",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
+      "runtimeArgs": ["dev", "--sourcemap"],
+      "env": {
+        "NODE_ENV": "development",
+        "PATH": "/opt/homebrew/opt/node@20/bin:${env:PATH}"
+      },
+      "sourceMaps": true,
+      "console": "integratedTerminal",
+      "outFiles": ["${workspaceFolder}/apps/ui-tars/dist/**/*.js"]
+    },
+    {
+      "name": "Electron: Main (Attach)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/apps/ui-tars/dist/**/*.js"],
+      "timeout": 30000
+    },
+    {
+      "name": "Electron: Renderer (Chrome)",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/apps/ui-tars/src/renderer",
+      "sourceMaps": true,
+      "timeout": 30000
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Electron: Full Debug",
+      "configurations": ["Electron: Main (Debug)"],
+      "stopAll": true
+    }
+  ]
+}

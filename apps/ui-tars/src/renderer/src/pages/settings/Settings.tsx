@@ -57,6 +57,9 @@ const formSchema = z.object({
   searchEngineForBrowser: z.nativeEnum(SearchEngineForSettings),
   reportStorageBaseUrl: z.string().optional(),
   utioBaseUrl: z.string().optional(),
+  vlmEnableThinking: z.boolean().optional(),
+  vlmMaxImageLength: z.number().min(1).max(20).optional(),
+  vlmSystemPrompt: z.string().optional(),
 });
 
 const SECTIONS = {
@@ -127,6 +130,9 @@ export default function Settings() {
       reportStorageBaseUrl: '',
       searchEngineForBrowser: SearchEngineForSettings.GOOGLE,
       utioBaseUrl: '',
+      vlmEnableThinking: false,
+      vlmMaxImageLength: 5,
+      vlmSystemPrompt: '',
       ...settings,
     },
   });
@@ -143,6 +149,9 @@ export default function Settings() {
         searchEngineForBrowser: settings.searchEngineForBrowser,
         reportStorageBaseUrl: settings.reportStorageBaseUrl,
         utioBaseUrl: settings.utioBaseUrl,
+        vlmEnableThinking: settings.vlmEnableThinking,
+        vlmMaxImageLength: settings.vlmMaxImageLength ?? 5,
+        vlmSystemPrompt: settings.vlmSystemPrompt,
       });
     }
   }, [settings, form]);
@@ -382,6 +391,78 @@ export default function Settings() {
                           {...field}
                         />
                       </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Thinking Mode */}
+                <FormField
+                  control={form.control}
+                  name="vlmEnableThinking"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Enable Thinking Mode</FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          Model will show its reasoning process.
+                        </div>
+                      </div>
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          disabled={isRemoteAutoUpdatedPreset}
+                          className="toggle checkbox checkbox-primary"
+                          checked={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Max Screenshot History */}
+                <FormField
+                  control={form.control}
+                  name="vlmMaxImageLength"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Screenshot History</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          disabled={isRemoteAutoUpdatedPreset}
+                          placeholder="Enter a number between 1-20"
+                          {...field}
+                          value={field.value === 0 ? '' : field.value}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <div className="text-sm text-muted-foreground">
+                        Number of previous screenshots to include in conversation (default: 5).
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* System Prompt */}
+                <FormField
+                  control={form.control}
+                  name="vlmSystemPrompt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom System Prompt</FormLabel>
+                      <FormControl>
+                        <textarea
+                          disabled={isRemoteAutoUpdatedPreset}
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          placeholder="Enter custom system prompt (leave empty for default)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

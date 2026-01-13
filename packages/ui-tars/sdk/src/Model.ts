@@ -40,6 +40,10 @@ type OpenAIChatCompletionCreateParams = Omit<ClientOptions, 'maxRetries'> &
 export interface UITarsModelConfig extends OpenAIChatCompletionCreateParams {
   /** Whether to use OpenAI Response API instead of Chat Completions API */
   useResponsesApi?: boolean;
+  /** Whether to enable thinking mode for models that support it */
+  enableThinking?: boolean;
+  /** Custom system prompt to override or prepend to the default one */
+  systemPrompt?: string;
 }
 
 export interface ThinkingVisionProModelConfig
@@ -137,9 +141,9 @@ export class UITarsModel extends Model {
     const createCompletionPramsThinkingVp: ThinkingVisionProModelConfig = {
       ...createCompletionPrams,
       thinking: {
-        type: 'disabled',
+        type: this.modelConfig.enableThinking ? 'enabled' : 'disabled',
       },
-    };
+    } as any;
 
     const startTime = Date.now();
 
@@ -257,6 +261,18 @@ export class UITarsModel extends Model {
     }
 
     // Use Chat Completions API if not using Response API
+    const truncatedParams = JSON.stringify(
+      createCompletionPramsThinkingVp,
+      (key, value) => {
+        if (typeof value === 'string' && value.startsWith('data:image/')) {
+          return value.slice(0, 50) + '...[truncated]';
+        }
+        return value;
+      },
+      2,
+    );
+    logger.info('[ChatCompletionsAPI] [payload]: ', truncatedParams);
+
     const result = await openai.chat.completions.create(
       createCompletionPramsThinkingVp,
       {
@@ -266,8 +282,17 @@ export class UITarsModel extends Model {
       },
     );
 
+    // Log the full response for debugging
+    logger.info('[ChatCompletionsAPI] [response]: ', JSON.stringify(result, null, 2));
+    logger.info('[ChatCompletionsAPI] [choices]: ', JSON.stringify(result.choices, null, 2));
+    logger.info('[ChatCompletionsAPI] [message]: ', JSON.stringify(result.choices?.[0]?.message, null, 2));
+
+    // Extract content - fallback to reasoning_content if content is null (Gemini models behavior)
+    const message = result.choices?.[0]?.message;
+    const content = message?.content ?? (message as any)?.reasoning_content ?? '';
+
     return {
-      prediction: result.choices?.[0]?.message?.content ?? '',
+      prediction: content,
       costTime: Date.now() - startTime,
       costTokens: result.usage?.total_tokens ?? 0,
     };

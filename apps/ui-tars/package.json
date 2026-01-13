@@ -1,11 +1,11 @@
 {
-  "name": "ui-tars-desktop",
+  "name": "jarvis-desktop",
   "version": "0.2.4",
   "private": true,
   "main": "./dist/main/main.js",
   "packageManager": "pnpm@9.10.0",
-  "description": "A GUI Agent application based on UI-TARS(Vision-Lanuage Model) that allows you to control your computer using natural language.",
-  "author": "ByteDance",
+  "description": "Jarvis - An AI-powered GUI Agent that allows you to control your computer using natural language.",
+  "author": "Daniel Naicu",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",

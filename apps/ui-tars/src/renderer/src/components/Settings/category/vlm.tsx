@@ -203,7 +203,13 @@ export function VLMSettings({
 
   const handleResponseApiChange = async (checked: boolean) => {
     if (checked) {
-      if (responseApiSupported === null) {
+      // Optionally check for support if we haven't checked yet
+      if (
+        responseApiSupported === null &&
+        newBaseUrl &&
+        newApiKey &&
+        newModelName
+      ) {
         setIsCheckingResponseApi(true);
         const modelConfig = {
           baseUrl: newBaseUrl,
@@ -211,30 +217,13 @@ export function VLMSettings({
           modelName: newModelName,
         };
 
-        if (
-          !modelConfig.baseUrl ||
-          !modelConfig.apiKey ||
-          !modelConfig.modelName
-        ) {
-          toast.error(
-            'Please fill in all required fields before enabling Response API',
-          );
-          setIsCheckingResponseApi(false);
-          return;
-        }
-
         const isSupported = await api.checkVLMResponseApiSupport(modelConfig);
         setResponseApiSupported(isSupported);
         setIsCheckingResponseApi(false);
-
-        if (!isSupported) {
-          return;
-        }
       }
 
-      if (responseApiSupported) {
-        form.setValue('useResponsesApi', true);
-      }
+      // Always allow enabling - the SDK will fallback to Chat Completions if needed
+      form.setValue('useResponsesApi', true);
     } else {
       form.setValue('useResponsesApi', false);
     }
@@ -263,10 +252,7 @@ export function VLMSettings({
     },
   }));
 
-  const switchDisabled =
-    isRemoteAutoUpdatedPreset ||
-    responseApiSupported === false ||
-    isCheckingResponseApi;
+  const switchDisabled = isRemoteAutoUpdatedPreset || isCheckingResponseApi;
 
   return (
     <>
@@ -415,7 +401,8 @@ export function VLMSettings({
                     />
                     {responseApiSupported === false && (
                       <p className="text-sm text-red-500">
-                        Response API is not supported by this model
+                        Model may not support Response API - will use Chat
+                        Completions API
                       </p>
                     )}
                     {isCheckingResponseApi && (

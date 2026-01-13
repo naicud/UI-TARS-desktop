@@ -105,6 +105,8 @@ export interface GUIAgentConfig<TOperator> {
   maxLoopCount?: number;
   /** Time interval between two loop iterations (in milliseconds), @default 0 */
   loopIntervalInMs?: number;
+  /** Maximum number of screenshots to include in conversation history, @default 5 */
+  maxImageLength?: number;
   uiTarsVersion?: UITarsModelVersion;
 }
 

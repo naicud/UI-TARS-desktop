@@ -28,6 +28,9 @@ export const PresetSchema = z.object({
   maxLoopCount: z.number().min(25).max(200).optional(),
   loopIntervalInMs: z.number().min(0).max(3000).optional(),
   searchEngineForBrowser: z.nativeEnum(SearchEngineForSettings).optional(),
+  vlmEnableThinking: z.boolean().optional(),
+  vlmMaxImageLength: z.number().min(1).max(20).optional(),
+  vlmSystemPrompt: z.string().optional(),
 
   // Report Settings
   reportStorageBaseUrl: z.string().url().optional(),

@@ -170,6 +170,8 @@ export const runAgent = async (
     apiKey: settings.vlmApiKey,
     model: settings.vlmModelName,
     useResponsesApi: settings.useResponsesApi,
+    enableThinking: settings.vlmEnableThinking,
+    systemPrompt: settings.vlmSystemPrompt,
   };
   let modelAuthHdrs: Record<string, string> = {};
 
@@ -183,16 +185,16 @@ export const runAgent = async (
       apiKey: '',
       model: '',
       useResponsesApi,
+      enableThinking: settings.vlmEnableThinking,
+      systemPrompt: settings.vlmSystemPrompt,
     };
     modelAuthHdrs = await getAuthHeader();
     modelVersion = await ProxyClient.getRemoteVLMProvider();
   }
 
-  const systemPrompt = getSpByModelVersion(
-    modelVersion,
-    language,
-    operatorType,
-  );
+  const systemPrompt =
+    settings.vlmSystemPrompt ||
+    getSpByModelVersion(modelVersion, language, operatorType);
 
   const guiAgent = new GUIAgent({
     model: modelConfig,
@@ -227,6 +229,7 @@ export const runAgent = async (
     },
     maxLoopCount: settings.maxLoopCount,
     loopIntervalInMs: settings.loopIntervalInMs,
+    maxImageLength: settings.vlmMaxImageLength,
     uiTarsVersion: modelVersion,
   });
 

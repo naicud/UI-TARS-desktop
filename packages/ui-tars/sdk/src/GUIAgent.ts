@@ -245,7 +245,7 @@ export class GUIAgent<T extends Operator> extends BaseGUIAgent<
         });
         // sliding images window to vlm model
         const vlmParams: InvokeParams = {
-          ...processVlmParams(modelFormat.conversations, modelFormat.images),
+          ...processVlmParams(modelFormat.conversations, modelFormat.images, this.config.maxImageLength),
           screenContext: {
             width,
             height,
