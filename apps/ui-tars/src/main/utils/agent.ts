@@ -10,6 +10,7 @@ import {
   getSystemPromptDoubao_15_15B,
   getSystemPromptDoubao_15_20B,
   getSystemPromptV1_5,
+  getHybridSystemPrompt,
 } from '../agent/prompts';
 import {
   closeScreenMarker,
@@ -44,8 +45,13 @@ export const getModelVersion = (
 export const getSpByModelVersion = (
   modelVersion: UITarsModelVersion,
   language: 'zh' | 'en' | 'it',
-  operatorType: 'browser' | 'computer',
+  operatorType: 'browser' | 'computer' | 'hybrid',
 ) => {
+  // Hybrid mode gets its own specialized prompt
+  if (operatorType === 'hybrid') {
+    return getHybridSystemPrompt(language);
+  }
+
   switch (modelVersion) {
     case UITarsModelVersion.DOUBAO_1_5_20B:
       return getSystemPromptDoubao_15_20B(language, operatorType);
@@ -96,6 +102,12 @@ export const beforeAgentRun = async (operator: Operator) => {
       hideMainWindow();
       showWidgetWindow();
       break;
+    case Operator.Hybrid:
+      // Hybrid mode: similar to LocalComputer but with browser capabilities
+      showWidgetWindow();
+      showScreenWaterFlow();
+      hideMainWindow();
+      break;
     default:
       break;
   }
@@ -115,6 +127,12 @@ export const afterAgentRun = (operator: Operator) => {
       break;
     case Operator.LocalBrowser:
       hideWidgetWindow();
+      showMainWindow();
+      break;
+    case Operator.Hybrid:
+      hideWidgetWindow();
+      closeScreenMarker();
+      hideScreenWaterFlow();
       showMainWindow();
       break;
     default:

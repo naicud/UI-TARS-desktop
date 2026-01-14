@@ -33,6 +33,7 @@ import { useSession } from '@renderer/hooks/useSession';
 
 import { Operator } from '@main/store/types';
 import { useSetting } from '../../hooks/useSetting';
+import { SelectOperator } from './SelectOperator';
 
 const ChatInput = ({
   operator,
@@ -286,6 +287,7 @@ const ChatInput = ({
             onChange={(e) => setLocalInstructions(e.target.value)}
             onKeyDown={handleKeyDown}
           />
+          <SelectOperator />
           <div className="absolute right-4 bottom-4 flex items-center gap-2">
             {!running && messages.length > 0 && (
               <Button

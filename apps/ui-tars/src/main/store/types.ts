@@ -73,6 +73,7 @@ export enum Operator {
   RemoteBrowser = 'Remote Browser Operator',
   LocalComputer = 'Local Computer Operator',
   LocalBrowser = 'Local Browser Operator',
+  Hybrid = 'Hybrid Operator', // Intelligent Computer + Browser switching
 }
 
 export type { PresetSource, LocalStore };
