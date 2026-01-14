@@ -3,7 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { useEffect, useState, useImperativeHandle } from 'react';
-import { CheckCircle, XCircle, Loader2, EyeOff, Eye } from 'lucide-react';
+import {
+  CheckCircle,
+  XCircle,
+  Loader2,
+  EyeOff,
+  Eye,
+  Download,
+} from 'lucide-react';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -201,6 +208,23 @@ export function VLMSettings({
     });
   };
 
+  const handleExportPreset = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      const result = await (window.electron.setting as any).exportPreset();
+      if (result) {
+        toast.success('Preset exported successfully');
+      }
+    } catch (error) {
+      toast.error('Failed to export preset', {
+        description:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    }
+  };
+
   const handleResponseApiChange = async (checked: boolean) => {
     if (checked) {
       // Optionally check for support if we haven't checked yet
@@ -259,9 +283,23 @@ export function VLMSettings({
       <Form {...form}>
         <form className={cn('space-y-8 px-[1px]', className)}>
           {!isRemoteAutoUpdatedPreset && (
-            <Button type="button" variant="outline" onClick={handlePresetModal}>
-              Import Preset Config
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePresetModal}
+              >
+                Import Preset Config
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportPreset}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export as YAML
+              </Button>
+            </div>
           )}
           {isRemoteAutoUpdatedPreset && (
             <PresetBanner

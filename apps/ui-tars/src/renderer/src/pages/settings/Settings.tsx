@@ -37,6 +37,7 @@ import { BROWSER_OPERATOR } from '@renderer/const';
 import { PresetImport } from './PresetImport';
 import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs';
 import { PresetBanner } from './PresetBanner';
+import { StorageIndicator } from './StorageIndicator';
 
 import googleIcon from '@resources/icons/google-color.svg?url';
 import bingIcon from '@resources/icons/bing-color.svg?url';
@@ -45,7 +46,7 @@ import { REPO_OWNER, REPO_NAME } from '@main/shared/constants';
 
 // 定义表单验证 schema
 const formSchema = z.object({
-  language: z.enum(['en', 'zh']),
+  language: z.enum(['en', 'zh', 'it']),
   vlmProvider: z.nativeEnum(VLMProviderV2, {
     message: 'Please select a VLM Provider to enhance resolution',
   }),
@@ -65,13 +66,13 @@ const formSchema = z.object({
 const SECTIONS = {
   vlm: 'VLM Settings',
   chat: 'Chat Settings',
+  storage: 'Storage',
   report: 'Report Settings',
   general: 'General',
 } as const;
 
 export default function Settings() {
-  const { settings, updateSetting, clearSetting, updatePresetFromRemote } =
-    useSetting();
+  const { settings, updateSetting, updatePresetFromRemote } = useSetting();
   const [isPresetModalOpen, setPresetModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('vlm');
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -224,18 +225,6 @@ export default function Settings() {
     });
   };
 
-  const handleClearSettings = async () => {
-    try {
-      await clearSetting();
-      toast.success('All settings cleared successfully');
-    } catch (error) {
-      toast.error('Failed to clear settings', {
-        description:
-          error instanceof Error ? error.message : 'Unknown error occurred',
-      });
-    }
-  };
-
   return (
     <div className="h-screen flex flex-col bg-white">
       <DragArea />
@@ -307,6 +296,7 @@ export default function Settings() {
                           <SelectContent>
                             <SelectItem value="en">English</SelectItem>
                             <SelectItem value="zh">中文</SelectItem>
+                            <SelectItem value="it">Italiano</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
@@ -402,7 +392,9 @@ export default function Settings() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-base">Enable Thinking Mode</FormLabel>
+                        <FormLabel className="text-base">
+                          Enable Thinking Mode
+                        </FormLabel>
                         <div className="text-sm text-muted-foreground">
                           Model will show its reasoning process.
                         </div>
@@ -440,7 +432,8 @@ export default function Settings() {
                         />
                       </FormControl>
                       <div className="text-sm text-muted-foreground">
-                        Number of previous screenshots to include in conversation (default: 5).
+                        Number of previous screenshots to include in
+                        conversation (default: 5).
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -578,6 +571,18 @@ export default function Settings() {
                   )}
                 />
               </div>
+
+              <div
+                id="storage"
+                ref={(el) => {
+                  sectionRefs.current.storage = el;
+                }}
+                className="space-y-6 pt-6 ml-1 mr-4"
+              >
+                <h2 className="text-lg font-medium">{SECTIONS.storage}</h2>
+                <StorageIndicator />
+              </div>
+
               <div
                 id="report"
                 ref={(el) => {
@@ -671,15 +676,7 @@ export default function Settings() {
 
       <div className="border-t p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex justify-between items-center">
-          <Button
-            variant="outline"
-            type="button"
-            className="text-red-400 border-red-400 hover:bg-red-50 hover:text-red-500"
-            onClick={handleClearSettings}
-          >
-            <Trash className="h-4 w-4" />
-            Clear
-          </Button>
+          <div />
           <div className="flex gap-4">
             <Button variant="outline" type="button" onClick={onCancel}>
               Cancel
@@ -698,5 +695,3 @@ export default function Settings() {
     </div>
   );
 }
-
-export { Settings as Component };

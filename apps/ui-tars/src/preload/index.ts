@@ -46,6 +46,7 @@ const electronHandler = {
       ipcRenderer.invoke('setting:importPresetFromUrl', url, autoUpdate),
     updatePresetFromRemote: () =>
       ipcRenderer.invoke('setting:updatePresetFromRemote'),
+    exportPreset: () => ipcRenderer.invoke('setting:exportPreset'),
     resetPreset: () => ipcRenderer.invoke('setting:resetPreset'),
     onUpdate: (callback: (setting: LocalStore) => void) => {
       ipcRenderer.on('setting-updated', (_, state) => callback(state));

@@ -52,63 +52,88 @@ export const agentRoute = t.router({
     store.setState({
       abortController: new AbortController(),
       thinking: true,
+      status: StatusEnum.RUNNING,
       errorMsg: null,
     });
 
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      // Intercept setState to prevent UI flash (status END/CALL_USER) if we have pending messages
-      const wrappedSetState = (newState: AppState) => {
-        const { pendingMessages } = store.getState();
-        if (
-          pendingMessages.length > 0 &&
-          (newState.status === StatusEnum.END ||
-            newState.status === StatusEnum.CALL_USER)
-        ) {
-          // Keep it running seamlessly
-          newState.status = StatusEnum.RUNNING;
-          newState.thinking = true;
+    // Start the agent loop in the background so we don't block the IPC response
+    (async () => {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        // Intercept setState to prevent UI flash (status END/CALL_USER) if we have pending messages
+        const wrappedSetState = (newState: AppState) => {
+          const { pendingMessages } = store.getState();
+          if (
+            pendingMessages.length > 0 &&
+            (newState.status === StatusEnum.END ||
+              newState.status === StatusEnum.CALL_USER)
+          ) {
+            // Keep it running seamlessly
+            newState.status = StatusEnum.RUNNING;
+            newState.thinking = true;
+          }
+          store.setState(newState);
+        };
+
+        try {
+          await runAgent(wrappedSetState, store.getState);
+        } catch (error) {
+          console.error('Error in agent loop:', error);
+          store.setState({
+            status: StatusEnum.ERROR,
+            errorMsg:
+              error instanceof Error
+                ? error.message
+                : 'Unknown error in agent loop',
+            thinking: false,
+          });
+          break;
         }
-        store.setState(newState);
-      };
 
-      await runAgent(wrappedSetState, store.getState);
+        const { pendingMessages, status, messages } = store.getState();
+        const nextMessage = pendingMessages[0];
 
-      const { pendingMessages, status, messages } = store.getState();
-      const nextMessage = pendingMessages[0];
+        // If we have a next message and the agent didn't crash or wasn't stopped manually
+        // Note: If we suppressed END, status is RUNNING.
+        if (
+          nextMessage &&
+          status !== StatusEnum.ERROR &&
+          status !== StatusEnum.USER_STOPPED &&
+          !store.getState().abortController?.signal.aborted
+        ) {
+          // Persist history for the next run
+          const historyMessages = messages.map((msg) => {
+            const {
+              screenshotBase64,
+              screenshotBase64WithElementMarker,
+              screenshotContext,
+              ...rest
+            } = msg;
+            return rest;
+          });
 
-      // If we have a next message and the agent didn't crash or wasn't stopped manually
-      // Note: If we suppressed END, status is RUNNING.
-      if (
-        nextMessage &&
-        status !== StatusEnum.ERROR &&
-        status !== StatusEnum.USER_STOPPED &&
-        !store.getState().abortController?.signal.aborted
-      ) {
-        // Persist history for the next run
-        const historyMessages = messages.map((msg) => {
-          const {
-            screenshotBase64,
-            screenshotBase64WithElementMarker,
-            screenshotContext,
-            ...rest
-          } = msg;
-          return rest;
-        });
+          // Create the new human message for the queued instruction
+          const newHumanMessage: Conversation = {
+            from: 'human',
+            value: nextMessage,
+            timing: { start: Date.now(), end: Date.now(), cost: 0 },
+          };
 
-        store.setState({
-          instructions: nextMessage,
-          pendingMessages: pendingMessages.slice(1),
-          sessionHistoryMessages: historyMessages, // Pass lightweight context to next agent instance
-          status: StatusEnum.RUNNING,
-          thinking: true,
-        });
-      } else {
-        break;
+          store.setState({
+            instructions: nextMessage,
+            pendingMessages: pendingMessages.slice(1),
+            sessionHistoryMessages: historyMessages, // Pass lightweight context to next agent instance
+            messages: [...messages, newHumanMessage], // Add the human message to conversation
+            status: StatusEnum.RUNNING,
+            thinking: true,
+          });
+        } else {
+          break;
+        }
       }
-    }
 
-    store.setState({ thinking: false });
+      store.setState({ thinking: false });
+    })();
   }),
   pauseRun: t.procedure.input<void>().handle(async () => {
     const guiAgent = GUIAgentManager.getInstance().getAgent();

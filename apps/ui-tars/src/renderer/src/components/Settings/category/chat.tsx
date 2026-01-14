@@ -27,7 +27,7 @@ import {
 import { Input } from '@renderer/components/ui/input';
 
 const formSchema = z.object({
-  language: z.enum(['en', 'zh']),
+  language: z.enum(['en', 'zh', 'it']),
   maxLoopCount: z.number().min(25).max(200),
   loopIntervalInMs: z.number().min(0).max(3000),
 });
@@ -108,6 +108,7 @@ export function ChatSettings() {
                     <SelectContent>
                       <SelectItem value="en">English</SelectItem>
                       <SelectItem value="zh">中文</SelectItem>
+                      <SelectItem value="it">Italiano</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>

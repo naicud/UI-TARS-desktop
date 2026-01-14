@@ -20,7 +20,14 @@ import { Button } from '@renderer/components/ui/button';
 // import { useScreenRecord } from '@renderer/hooks/useScreenRecord';
 import { api } from '@renderer/api';
 
-import { Play, Send, Square, Loader2, CircleArrowUp } from 'lucide-react';
+import {
+  Play,
+  Send,
+  Square,
+  Loader2,
+  CircleArrowUp,
+  Trash2,
+} from 'lucide-react';
 import { Textarea } from '@renderer/components/ui/textarea';
 import { useSession } from '@renderer/hooks/useSession';
 
@@ -44,6 +51,7 @@ const ChatInput = ({
     messages,
     restUserData,
     pendingMessages = [],
+    thinking,
   } = useStore();
   const [localInstructions, setLocalInstructions] = useState('');
   const { run, stopAgentRuning } = useRunAgent();
@@ -51,7 +59,8 @@ const ChatInput = ({
   const { settings, updateSetting } = useSetting();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // StatusEnum.CALL_USER is also a running state in UI perspective until user input
-  const running = status === StatusEnum.RUNNING;
+  // Also check `thinking` to catch the state before status is synced
+  const running = status === StatusEnum.RUNNING || thinking;
   const isCallUser = useMemo(() => status === StatusEnum.CALL_USER, [status]);
 
   useEffect(() => {
@@ -174,6 +183,10 @@ const ChatInput = ({
     await stopAgentRuning(() => {
       setLocalInstructions('');
     });
+    // await api.clearHistory(); // Removed as per user request to separate Stop and Clear
+  };
+
+  const clearHistory = async () => {
     await api.clearHistory();
   };
 
@@ -274,6 +287,17 @@ const ChatInput = ({
             onKeyDown={handleKeyDown}
           />
           <div className="absolute right-4 bottom-4 flex items-center gap-2">
+            {!running && messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={clearHistory}
+                title="Clear History"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
             {running && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}

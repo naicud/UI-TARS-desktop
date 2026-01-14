@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 // /apps/ui-tars/src/renderer/src/db/chat.ts
-import { get, set, del, createStore } from 'idb-keyval';
+import { get, set, del, entries, createStore } from 'idb-keyval';
 import { ConversationWithSoM } from '@/main/shared/types';
 
 export interface ChatMetaInfo {
@@ -41,6 +41,36 @@ export class ChatManager {
     await del(sessionId, chatStore);
 
     return true;
+  }
+
+  async clearAllChats() {
+    const keys = await entries(chatStore);
+    await Promise.all(keys.map(([key]) => del(key, chatStore)));
+  }
+
+  async clearAllScreenshots() {
+    const entriesList = await entries(chatStore);
+    await Promise.all(
+      entriesList.map(async ([key, value]) => {
+        const messages = value as ConversationWithSoM[];
+        const updatedMessages = messages.map((msg) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const {
+            screenshotBase64,
+            screenshotBase64WithElementMarker,
+            ...rest
+          } = msg;
+          return rest as ConversationWithSoM;
+        });
+        await set(key, updatedMessages, chatStore);
+      }),
+    );
+  }
+
+  async getChatUsage() {
+    const items = await entries(chatStore);
+    const jsonString = JSON.stringify(items);
+    return new Blob([jsonString]).size;
   }
 }
 
