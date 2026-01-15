@@ -54,6 +54,18 @@ const ChatInput = ({
   const pendingMessages = useStore((state) => state.pendingMessages) ?? [];
   const thinking = useStore((state) => state.thinking);
 
+  // Debug: log pendingMessages whenever they change
+  useEffect(() => {
+    console.log(
+      '[ChatInput] pendingMessages updated:',
+      pendingMessages.length,
+      'thinking:',
+      thinking,
+      'status:',
+      status,
+    );
+  }, [pendingMessages, thinking, status]);
+
   const [localInstructions, setLocalInstructions] = useState('');
   const { run, stopAgentRuning } = useRunAgent();
   const { getSession, updateSession, chatMessages } = useSession();
@@ -112,6 +124,14 @@ const ChatInput = ({
   // console.log('running', 'status', status, running);
   const startRun = async () => {
     const instructions = getInstantInstructions();
+    console.log(
+      '[ChatInput] startRun called, instructions:',
+      instructions?.substring(0, 50),
+      'running:',
+      running,
+      'isCallUser:',
+      isCallUser,
+    );
     if (!instructions) {
       return;
     }
@@ -126,8 +146,13 @@ const ChatInput = ({
 
       if (running) {
         // Queue the message
+        console.log(
+          '[ChatInput] Queueing message while running:',
+          instructions,
+        );
         await api.addPendingMessage({ message: instructions });
         setLocalInstructions('');
+        console.log('[ChatInput] Message queued, input cleared');
         return;
       }
     }
@@ -153,7 +178,9 @@ const ChatInput = ({
       },
     });
 
+    console.log('[ChatInput] Calling run() - NOT queued, starting new agent');
     run(instructions, history, () => {
+      console.log('[ChatInput] run() callback executed');
       setLocalInstructions('');
     });
   };

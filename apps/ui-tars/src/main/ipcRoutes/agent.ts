@@ -44,8 +44,10 @@ export class GUIAgentManager {
 
 export const agentRoute = t.router({
   runAgent: t.procedure.input<void>().handle(async () => {
-    const { thinking } = store.getState();
+    const { thinking, status } = store.getState();
+    console.log('[runAgent] Called - thinking:', thinking, 'status:', status);
     if (thinking) {
+      console.log('[runAgent] Already thinking, returning early');
       return;
     }
 
@@ -55,9 +57,11 @@ export const agentRoute = t.router({
       status: StatusEnum.RUNNING,
       errorMsg: null,
     });
+    console.log('[runAgent] State set to RUNNING, thinking: true');
 
     // Start the agent loop in the background so we don't block the IPC response
     (async () => {
+      console.log('[MessageQueue] Starting agent loop');
       // eslint-disable-next-line no-constant-condition
       while (true) {
         // Intercept setState to prevent UI flash (status END/CALL_USER) if we have pending messages
@@ -76,7 +80,9 @@ export const agentRoute = t.router({
         };
 
         try {
+          console.log('[runAgent] Calling runAgent service...');
           await runAgent(wrappedSetState, store.getState);
+          console.log('[runAgent] runAgent service returned');
         } catch (error) {
           console.error('Error in agent loop:', error);
           store.setState({
@@ -91,6 +97,12 @@ export const agentRoute = t.router({
         }
 
         const { pendingMessages, status, messages } = store.getState();
+        console.log(
+          '[MessageQueue] After runAgent - pendingMessages:',
+          pendingMessages.length,
+          'status:',
+          status,
+        );
         const nextMessage = pendingMessages[0];
 
         // If we have a next message and the agent didn't crash or wasn't stopped manually
@@ -128,6 +140,9 @@ export const agentRoute = t.router({
             thinking: true,
           });
         } else {
+          console.log(
+            '[MessageQueue] Breaking loop - no pending messages or agent stopped',
+          );
           break;
         }
       }
@@ -177,9 +192,16 @@ export const agentRoute = t.router({
     .input<{ message: string }>()
     .handle(async ({ input }) => {
       const { pendingMessages } = store.getState();
+      console.log(
+        '[MessageQueue] addPendingMessage called:',
+        input.message,
+        'current queue size:',
+        pendingMessages.length,
+      );
       store.setState({
         pendingMessages: [...pendingMessages, input.message],
       });
+      console.log('[MessageQueue] New queue size:', pendingMessages.length + 1);
     }),
   setMessages: t.procedure
     .input<{ messages: Conversation[] }>()
