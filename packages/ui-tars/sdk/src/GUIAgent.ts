@@ -245,7 +245,11 @@ export class GUIAgent<T extends Operator> extends BaseGUIAgent<
         });
         // sliding images window to vlm model
         const vlmParams: InvokeParams = {
-          ...processVlmParams(modelFormat.conversations, modelFormat.images, this.config.maxImageLength),
+          ...processVlmParams(
+            modelFormat.conversations,
+            modelFormat.images,
+            this.config.maxImageLength,
+          ),
           screenContext: {
             width,
             height,
@@ -261,6 +265,7 @@ export class GUIAgent<T extends Operator> extends BaseGUIAgent<
         const {
           prediction,
           parsedPredictions,
+          reasoningContent,
           costTime,
           costTokens,
           responseId,
@@ -327,6 +332,7 @@ export class GUIAgent<T extends Operator> extends BaseGUIAgent<
         data.conversations.push({
           from: 'gpt',
           value: predictionSummary,
+          reasoningContent,
           timing: {
             start,
             end,

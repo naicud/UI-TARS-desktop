@@ -2,7 +2,8 @@
  * Copyright (c) 2025 Bytedance, Inc. and its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { ipcMain } from 'electron';
+import { ipcMain, dialog, BrowserWindow } from 'electron';
+import fs from 'fs';
 import { SettingStore } from '../store/setting';
 import { logger } from '../logger';
 import { LocalStore } from '@main/store/validate';
@@ -90,6 +91,31 @@ export function registerSettingsHandlers() {
       });
     } else {
       throw new Error('No remote preset configured');
+    }
+  });
+
+  /**
+   * Export setting preset to file
+   */
+  ipcMain.handle('setting:exportPreset', async () => {
+    try {
+      const yamlContent = SettingStore.exportSettingsToYaml();
+      const win = BrowserWindow.getFocusedWindow();
+
+      const { canceled, filePath } = await dialog.showSaveDialog(win!, {
+        title: 'Export VLM Settings Preset',
+        defaultPath: 'ui-tars-preset.yaml',
+        filters: [{ name: 'YAML', extensions: ['yaml', 'yml'] }],
+      });
+
+      if (!canceled && filePath) {
+        fs.writeFileSync(filePath, yamlContent, 'utf-8');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      logger.error('Failed to export preset:', error);
+      throw error;
     }
   });
 }

@@ -4,7 +4,12 @@
  */
 import { z } from 'zod';
 
-import { SearchEngineForSettings, VLMProviderV2, Operator } from './types';
+import {
+  SearchEngineForSettings,
+  VLMProviderV2,
+  Operator,
+  TabCreationStrategy,
+} from './types';
 
 const PresetSourceSchema = z.object({
   type: z.enum(['local', 'remote']),
@@ -23,11 +28,12 @@ export const PresetSchema = z.object({
 
   // Chat Settings
   operator: z.nativeEnum(Operator),
-  language: z.enum(['zh', 'en']).optional(),
+  language: z.enum(['zh', 'en', 'it']).optional(),
   screenshotScale: z.number().min(0.1).max(1).optional(),
   maxLoopCount: z.number().min(25).max(200).optional(),
   loopIntervalInMs: z.number().min(0).max(3000).optional(),
   searchEngineForBrowser: z.nativeEnum(SearchEngineForSettings).optional(),
+  tabCreationStrategy: z.nativeEnum(TabCreationStrategy).optional(),
   vlmEnableThinking: z.boolean().optional(),
   vlmMaxImageLength: z.number().min(1).max(20).optional(),
   vlmSystemPrompt: z.string().optional(),

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { useState } from 'react';
-import { AlertCircle, Camera, ChevronDown, Loader2 } from 'lucide-react';
+import { AlertCircle, Brain, Camera, ChevronDown, Loader2 } from 'lucide-react';
 import { ErrorStatusEnum } from '@ui-tars/shared/types';
 
 import { Button } from '@renderer/components/ui/button';
@@ -115,6 +115,37 @@ export const LoadingText = ({ text }: { text: string }) => {
         <Loader2 className="h-4 w-4 animate-spin" />
         {text}
       </div>
+    </div>
+  );
+};
+
+/**
+ * ReasoningToggle - Display LLM reasoning/thinking content with collapsible toggle
+ */
+export const ReasoningToggle = ({ reasoning }: { reasoning?: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!reasoning) return null;
+
+  return (
+    <div className="mb-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-xs text-muted-foreground hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+      >
+        <Brain className="w-3 h-3 mr-1" />
+        {isOpen ? 'Hide' : 'Show'} Reasoning
+        <ChevronDown
+          className={`w-3 h-3 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </Button>
+      {isOpen && (
+        <div className="mt-2 p-3 bg-purple-50 dark:bg-purple-950/50 rounded-md text-sm border border-purple-200 dark:border-purple-800">
+          <Markdown>{reasoning.replace(/\\n/g, '\n')}</Markdown>
+        </div>
+      )}
     </div>
   );
 };

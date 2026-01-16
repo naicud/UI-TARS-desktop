@@ -27,6 +27,7 @@ import {
   AssistantTextMessage,
   ScreenshotMessage,
   LoadingText,
+  ReasoningToggle,
 } from './Messages';
 
 const RunMessages = () => {
@@ -130,6 +131,9 @@ const RunMessages = () => {
             // Otherwise, render the thought chain.
             return (
               <div key={idx}>
+                {message.reasoningContent && (
+                  <ReasoningToggle reasoning={message.reasoningContent} />
+                )}
                 {predictionParsed?.length ? (
                   <ThoughtChain
                     steps={predictionParsed}

@@ -11,6 +11,7 @@ import { GUIAgent, type GUIAgentConfig } from '@ui-tars/sdk';
 import { markClickPosition } from '@main/utils/image';
 import { UTIOService } from '@main/services/utio';
 import { NutJSElectronOperator } from '../agent/operator';
+import { HybridOperator } from '../agent/hybridOperator';
 import {
   createRemoteBrowserOperator,
   RemoteComputerOperator,
@@ -30,6 +31,7 @@ import {
   beforeAgentRun,
   afterAgentRun,
   getLocalBrowserSearchEngine,
+  getLocalBrowserTabStrategy,
 } from '../utils/agent';
 import { FREE_MODEL_BASE_URL } from '../remote/shared';
 import { getAuthHeader } from '../remote/auth';
@@ -118,12 +120,13 @@ export const runAgent = async (
     });
   };
 
-  let operatorType: 'computer' | 'browser' = 'computer';
+  let operatorType: 'computer' | 'browser' | 'hybrid' = 'computer';
   let operator:
     | NutJSElectronOperator
     | DefaultBrowserOperator
     | RemoteComputerOperator
-    | RemoteBrowserOperator;
+    | RemoteBrowserOperator
+    | HybridOperator;
 
   switch (settings.operator) {
     case Operator.LocalComputer:
@@ -149,6 +152,7 @@ export const runAgent = async (
         false,
         getState().status === StatusEnum.CALL_USER,
         getLocalBrowserSearchEngine(settings.searchEngineForBrowser),
+        getLocalBrowserTabStrategy(settings.tabCreationStrategy),
       );
       operatorType = 'browser';
       break;
@@ -160,6 +164,11 @@ export const runAgent = async (
       operator = await createRemoteBrowserOperator();
       operatorType = 'browser';
       break;
+    case Operator.Hybrid:
+      operator = new HybridOperator();
+      operatorType = 'hybrid';
+      logger.info('[runAgent] Using HybridOperator (Computer + Browser)');
+      break;
     default:
       break;
   }
@@ -167,6 +176,7 @@ export const runAgent = async (
   let modelVersion = getModelVersion(settings.vlmProvider);
   let modelConfig: UITarsModelConfig = {
     baseURL: settings.vlmBaseUrl,
+    // secretlint-disable-next-line @secretlint/secretlint-rule-pattern
     apiKey: settings.vlmApiKey,
     model: settings.vlmModelName,
     useResponsesApi: settings.useResponsesApi,
@@ -182,6 +192,7 @@ export const runAgent = async (
     const useResponsesApi = await ProxyClient.getRemoteVLMResponseApiSupport();
     modelConfig = {
       baseURL: FREE_MODEL_BASE_URL,
+      // secretlint-disable-next-line @secretlint/secretlint-rule-pattern
       apiKey: '',
       model: '',
       useResponsesApi,

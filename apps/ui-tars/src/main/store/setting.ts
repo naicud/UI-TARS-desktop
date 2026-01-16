@@ -141,6 +141,24 @@ export class SettingStore {
       throw error;
     }
   }
+
+  public static exportSettingsToYaml(): string {
+    const settings = SettingStore.getStore();
+    // Exclude UI preferences and external integrations, keep VLM and execution settings
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const {
+      presetSource,
+      language,
+      searchEngineForBrowser,
+      operator,
+      reportStorageBaseUrl,
+      utioBaseUrl,
+      ...vlmSettings
+    } = settings;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+
+    return yaml.dump(vlmSettings);
+  }
 }
 
 async function parsePresetYaml(yamlContent: string): Promise<LocalStore> {

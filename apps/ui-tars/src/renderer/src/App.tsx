@@ -5,6 +5,7 @@
 import { Route, HashRouter, Routes } from 'react-router';
 import { lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
+import { ThemeProvider } from 'next-themes';
 
 import { MainLayout } from './layouts/MainLayout';
 
@@ -19,30 +20,32 @@ const Widget = lazy(() => import('./pages/widget'));
 
 export default function App() {
   return (
-    <HashRouter>
-      <Suspense
-        fallback={
-          <div className="loading-container">
-            <div className="loading-spinner" />
-          </div>
-        }
-      >
-        <Routes>
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/local" element={<LocalOperator />} />
-            <Route path="/free-remote" element={<FreeRemoteOperator />} />
-            {/* <Route path="/paid-remote" element={<PaidRemoteOperator />} /> */}
-          </Route>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <HashRouter>
+        <Suspense
+          fallback={
+            <div className="loading-container">
+              <div className="loading-spinner" />
+            </div>
+          }
+        >
+          <Routes>
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/local" element={<LocalOperator />} />
+              <Route path="/free-remote" element={<FreeRemoteOperator />} />
+              {/* <Route path="/paid-remote" element={<PaidRemoteOperator />} /> */}
+            </Route>
 
-          <Route path="/widget" element={<Widget />} />
-        </Routes>
-        <Toaster
-          position="top-right"
-          offset={{ top: '48px' }}
-          mobileOffset={{ top: '48px' }}
-        />
-      </Suspense>
-    </HashRouter>
+            <Route path="/widget" element={<Widget />} />
+          </Routes>
+          <Toaster
+            position="top-right"
+            offset={{ top: '48px' }}
+            mobileOffset={{ top: '48px' }}
+          />
+        </Suspense>
+      </HashRouter>
+    </ThemeProvider>
   );
 }

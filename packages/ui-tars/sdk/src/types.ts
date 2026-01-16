@@ -56,6 +56,8 @@ export interface InvokeParams {
 export interface InvokeOutput {
   prediction: string;
   parsedPredictions: PredictionParsed[];
+  /** LLM reasoning/thinking content for monitoring */
+  reasoningContent?: string;
   costTime?: number;
   costTokens?: number;
   /** == Response API only == */

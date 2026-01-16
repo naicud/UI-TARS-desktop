@@ -3,9 +3,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { NutJSElectronOperator } from './operator';
+import { HybridOperator } from './hybridOperator';
 
+/**
+ * Hybrid system prompt that combines Computer Use and Browser Use capabilities.
+ * The model can use standard computer actions and optionally activate browser mode
+ * for precise web interaction.
+ */
+export const getHybridSystemPrompt = (language: 'zh' | 'en' | 'it') => {
+  const langNote =
+    language === 'zh' ? 'Chinese' : language === 'it' ? 'Italian' : 'English';
+
+  return `You are a Hybrid GUI agent with both Computer Control and Browser capabilities. You can see and control the entire desktop, and when needed, activate high-precision browser mode for web tasks.
+
+## Output Format
+\`\`\`
+Thought: ...
+Action: ...
+\`\`\`
+
+## Action Space
+${HybridOperator.MANUAL.ACTION_SPACES.join('\n')}
+
+## Hybrid Mode Instructions
+- By default, you operate in **Computer Mode**: You see the full screen and can interact with any application.
+- Use \`open_browser(url='...')\` when you need to perform complex web tasks (form filling, data extraction, precise clicking on web elements).
+- After calling \`open_browser\`, you will be in **Browser Mode** with enhanced web capabilities.
+- Use \`close_browser()\` to return to full Computer Mode when web task is complete.
+- Choose the right mode based on the task:
+  - **Computer Mode**: File management, native apps, system settings, general navigation
+  - **Browser Mode**: Web forms, web scraping, multi-tab browsing, precise web element interaction
+
+## Note
+- Use ${langNote} in \`Thought\` part.
+- Write a small plan and summarize your next action in one sentence in \`Thought\` part.
+- Be intelligent about mode switching: don't switch unnecessarily.
+
+## User Instruction
+`;
+};
 export const getSystemPrompt = (
-  language: 'zh' | 'en',
+  language: 'zh' | 'en' | 'it',
 ) => `You are a GUI agent. You are given a task and your action history, with screenshots. You need to perform the next action to complete the task.
 
 ## Output Format
@@ -18,14 +56,14 @@ Action: ...
 ${NutJSElectronOperator.MANUAL.ACTION_SPACES.join('\n')}
 
 ## Note
-- Use ${language === 'zh' ? 'Chinese' : 'English'} in \`Thought\` part.
+- Use ${language === 'zh' ? 'Chinese' : language === 'it' ? 'Italian' : 'English'} in \`Thought\` part.
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in \`Thought\` part.
 
 ## User Instruction
 `;
 
 export const getSystemPromptV1_5 = (
-  language: 'zh' | 'en',
+  language: 'zh' | 'en' | 'it',
   useCase: 'normal' | 'poki',
 ) => `You are a GUI agent. You are given a task and your action history, with screenshots. You need to perform the next action to complete the task.
 
@@ -50,7 +88,7 @@ call_user() # Submit the task and call the user when the task is unsolvable, or 
 
 
 ## Note
-- Use ${language === 'zh' ? 'Chinese' : 'English'} in \`Thought\` part.
+- Use ${language === 'zh' ? 'Chinese' : language === 'it' ? 'Italian' : 'English'} in \`Thought\` part.
 - ${useCase === 'normal' ? 'Generate a well-defined and practical strategy in the `Thought` section, summarizing your next move and its objective.' : 'Compose a step-by-step approach in the `Thought` part, specifying your next action and its focus.'}
 
 ## User Instruction
@@ -86,7 +124,7 @@ call_user() # Submit the task and call the user when the task is unsolvable, or 
 ## User Instruction
 `;
 
-export const getSystemPromptDoubao_15_15B = (language: 'zh' | 'en') => `
+export const getSystemPromptDoubao_15_15B = (language: 'zh' | 'en' | 'it') => `
 You are a GUI agent. You are given a task and your action history, with screenshots. You need to perform the next action to complete the task.
 
 ## Output Format
@@ -109,7 +147,7 @@ finished(content='xxx') # Use escape characters \\', \\", and \n in content part
 
 
 ## Note
-- Use ${language === 'zh' ? 'Chinese' : 'English'} in \`Thought\` part.
+- Use ${language === 'zh' ? 'Chinese' : language === 'it' ? 'Italian' : 'English'} in \`Thought\` part.
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in \`Thought\` part.
 
 ## User Instruction
@@ -142,7 +180,7 @@ const ThoughtExamplesEN = `- Example1. Thought: A number 2 appears in the first 
 `;
 
 export const getSystemPromptDoubao_15_20B = (
-  language: 'zh' | 'en',
+  language: 'zh' | 'en' | 'it',
   operatorType: 'browser' | 'computer',
 ) => `You are a GUI agent. You are given a task and your action history, with screenshots. You need to perform the next action to complete the task.
 
@@ -170,7 +208,7 @@ finished(content='xxx') # Submit the task with an report to the user. Use escape
 
 
 ## Note
-- Use ${language === 'zh' ? 'Chinese' : 'English'} in \`Thought\` part.
+- Use ${language === 'zh' ? 'Chinese' : language === 'it' ? 'Italian' : 'English'} in \`Thought\` part.
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in \`Thought\` part.
 - You may stumble upon new rules or features while playing the game or executing GUI tasks for the first time. Make sure to record them in your \`Thought\` and utilize them later.
 - Your thought style should follow the style of thought Examples.
@@ -185,7 +223,9 @@ ${language === 'zh' ? ThoughtExamplesZH : ThoughtExamplesEN}
 Thought: ${
   language === 'zh'
     ? '在这里输出你的中文思考，你的思考样式应该参考上面的Thought Examples...'
-    : 'Write your thoughts here in English, your thinking style should follow the Thought Examples above...'
+    : language === 'it'
+      ? 'Scrivi qui i tuoi pensieri in italiano, il tuo stile di pensiero dovrebbe seguire gli Thought Examples sopra...'
+      : 'Write your thoughts here in English, your thinking style should follow the Thought Examples above...'
 }
 Action: click(point='<point>10 20</point>')
 

@@ -12,6 +12,8 @@ import {
   BrowserType,
   BrowserInterface,
   RemoteBrowser,
+  TabSessionManager,
+  SmartBrowserManager,
 } from '@agent-infra/browser';
 import type {
   ScreenshotOutput,
@@ -45,6 +47,9 @@ export class BrowserOperator extends Operator {
   private showWaterFlowEffect = true;
 
   private deviceScaleFactor?: number;
+
+  /** TabSessionManager for intelligent tab reuse */
+  private tabSessionManager?: TabSessionManager;
 
   /**
    * Creates a new BrowserOperator instance
@@ -80,14 +85,54 @@ export class BrowserOperator extends Operator {
    * @throws Error if no active page is found
    */
   private async getActivePage(): Promise<Page> {
-    const page = await this.browser.getActivePage();
-    if (!page) {
-      throw new Error('No active page found');
+    // If we have a TabSessionManager, use it to get the session page
+    // This prevents creating new tabs unnecessarily
+    if (this.tabSessionManager) {
+      const sessionPage = this.tabSessionManager.getSessionPage();
+      if (sessionPage) {
+        try {
+          // Verify page is still valid
+          await sessionPage.evaluate(() => document.readyState);
+          this.currentPage = sessionPage;
+          return sessionPage;
+        } catch {
+          this.logger.warn(
+            'Session page no longer available, will get or create one',
+          );
+        }
+      }
+
+      // No valid session page - use TabSessionManager to get or create one
+      // This is the SOLID approach: TabSessionManager owns page creation
+      try {
+        const page = await this.tabSessionManager.getOrCreateSessionPage();
+        this.currentPage = page;
+        return page;
+      } catch (e) {
+        this.logger.error('TabSessionManager failed to get or create page:', e);
+        throw e;
+      }
     }
-    if (this.currentPage !== page) {
-      this.currentPage = page;
+
+    // Fallback when no TabSessionManager (shouldn't happen in normal flow)
+    try {
+      const page = await this.browser.getActivePage();
+      if (this.currentPage !== page) {
+        this.currentPage = page;
+      }
+      return page;
+    } catch (e) {
+      throw new Error(`No active page found: ${(e as Error).message}`);
     }
-    return page;
+  }
+
+  /**
+   * Set the TabSessionManager for this operator
+   * This enables intelligent tab reuse
+   */
+  public setTabSessionManager(manager: TabSessionManager): void {
+    this.tabSessionManager = manager;
+    this.logger.info('TabSessionManager set for intelligent tab reuse');
   }
 
   public setHighlightClickableElements(enable: boolean): void {
@@ -707,10 +752,19 @@ export class BrowserOperator extends Operator {
 
 export class DefaultBrowserOperator extends BrowserOperator {
   private static instance: DefaultBrowserOperator | null = null;
-  private static browser: LocalBrowser | null = null;
+  private static browser: BrowserInterface | null = null;
   private static browserPath: string;
   private static browserType: BrowserType;
   private static logger: Logger | null = null;
+  private static tabSessionManager: TabSessionManager | null = null;
+  private static currentTabStrategy:
+    | 'always_reuse'
+    | 'smart'
+    | 'always_new'
+    | null = null;
+  private static smartBrowserManager: SmartBrowserManager | null = null;
+  private static lastConnectionMode: 'attached' | 'launched' | 'reused' | null =
+    null;
 
   private constructor(options: BrowserOperatorOptions) {
     super(options);
@@ -744,36 +798,91 @@ export class DefaultBrowserOperator extends BrowserOperator {
     }
   }
 
+  /**
+   * Get information about the current browser connection
+   * Useful for UI to show connection status
+   */
+  public static getConnectionInfo(): {
+    isConnected: boolean;
+    mode: 'attached' | 'launched' | 'reused' | null;
+    isExternalBrowser: boolean;
+    debugPort: number | null;
+  } {
+    return {
+      isConnected: this.browser !== null,
+      mode: this.lastConnectionMode,
+      isExternalBrowser: this.smartBrowserManager?.isExternalBrowser() ?? false,
+      debugPort: this.smartBrowserManager?.getDebugPort() ?? null,
+    };
+  }
+
   public static async getInstance(
     highlight = false,
     showActionInfo = false,
     showWaterFlow = false,
     isCallUser = false,
     searchEngine = 'google' as SearchEngine,
+    tabCreationStrategy:
+      | 'always_reuse'
+      | 'smart'
+      | 'always_new' = 'always_reuse',
   ): Promise<DefaultBrowserOperator> {
     if (!this.logger) {
       this.logger = new ConsoleLogger('[DefaultBrowserOperator]');
     }
 
     if (this.browser) {
-      const isAlive = await this.browser.isBrowserAlive();
-      if (!isAlive) {
+      // Check if existing browser is still alive
+      try {
+        const page = await this.browser.getActivePage();
+        await page.evaluate(() => document.readyState);
+      } catch {
+        this.logger.warn('Existing browser is no longer alive, will reconnect');
         this.browser = null;
         this.instance = null;
+        this.tabSessionManager = null;
       }
     }
 
     if (!this.browser) {
-      this.browser = new LocalBrowser({ logger: this.logger });
-      await this.browser.launch({
-        executablePath: this.browserPath,
-        browserType: this.browserType,
-      });
+      // Use SmartBrowserManager for intelligent browser detection and reuse
+      if (!this.smartBrowserManager) {
+        this.smartBrowserManager = SmartBrowserManager.getInstance({
+          logger: this.logger ?? undefined,
+          launchOptions: {
+            executablePath: this.browserPath,
+            browserType: this.browserType,
+          },
+          onBrowserLaunch: () => {
+            this.logger?.info(
+              '🚀 Launching new browser with debug port for persistent use',
+            );
+          },
+        });
+      }
+
+      const { browser, mode, isNewInstance } =
+        await this.smartBrowserManager.getOrCreateBrowser();
+      this.browser = browser;
+      this.lastConnectionMode = mode;
+
+      if (isNewInstance) {
+        this.logger.info(`Browser connection mode: ${mode}`);
+        if (mode === 'attached') {
+          this.logger.info('✅ Attached to existing browser with debug port');
+        } else if (mode === 'launched') {
+          this.logger.info(
+            '🚀 Launched new browser with debug port for future reuse',
+          );
+        }
+      } else {
+        this.logger.info('♻️ Reusing existing browser instance');
+      }
     }
 
     if (!this.instance) {
       this.instance = new DefaultBrowserOperator({
-        browser: this.browser,
+        browser: this.browser!,
         browserType: this.browserType,
         logger: this.logger,
         highlightClickableElements: highlight,
@@ -782,17 +891,40 @@ export class DefaultBrowserOperator extends BrowserOperator {
       });
     }
 
+    // Always create TabSessionManager for intelligent tab reuse
+    // Recreate if strategy changed
+    if (
+      !this.tabSessionManager ||
+      this.currentTabStrategy !== tabCreationStrategy
+    ) {
+      if (this.tabSessionManager) {
+        await this.tabSessionManager.cleanup();
+      }
+      this.tabSessionManager = new TabSessionManager(this.browser!, {
+        logger: this.logger ?? undefined,
+        strategy: tabCreationStrategy,
+      });
+      this.currentTabStrategy = tabCreationStrategy;
+      this.logger?.info(
+        `TabSessionManager created with strategy: ${tabCreationStrategy}`,
+      );
+    }
+
+    // Always connect TabSessionManager to the operator instance
+    // This ensures getActivePage() reuses the session page instead of creating new tabs
+    this.instance.setTabSessionManager(this.tabSessionManager);
+
+    // Only navigate to search engine on new sessions (not when user called)
     if (!isCallUser) {
-      const openingPage = await this.browser?.createPage();
       const searchEngineUrls = {
         [SearchEngine.GOOGLE]: 'https://www.google.com/',
         [SearchEngine.BING]: 'https://www.bing.com/',
         [SearchEngine.BAIDU]: 'https://www.baidu.com/',
       };
       const targetUrl = searchEngineUrls[searchEngine];
-      await openingPage?.goto(targetUrl, {
-        waitUntil: 'networkidle2',
-      });
+
+      // getOrCreateSessionPage reuses existing tab if available
+      await this.tabSessionManager.getOrCreateSessionPage(targetUrl);
     }
 
     this.instance.setHighlightClickableElements(highlight);
@@ -803,10 +935,16 @@ export class DefaultBrowserOperator extends BrowserOperator {
   public static async destroyInstance(): Promise<void> {
     if (this.instance) {
       await this.instance.cleanup();
-      if (this.browser) {
-        await this.browser.close();
-        this.browser = null;
+      if (this.tabSessionManager) {
+        await this.tabSessionManager.cleanup();
+        this.tabSessionManager = null;
       }
+      // Use SmartBrowserManager to handle browser lifecycle
+      // In persistent mode, browser stays open for future reuse
+      if (this.smartBrowserManager) {
+        await this.smartBrowserManager.closeBrowser(false); // Don't force close
+      }
+      this.browser = null;
       this.instance = null;
     }
   }

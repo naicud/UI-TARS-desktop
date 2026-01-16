@@ -24,6 +24,7 @@ import {
   ErrorMessage,
   HumanTextMessage,
   LoadingText,
+  ReasoningToggle,
   ScreenshotMessage,
 } from '../../components/RunMessages/Messages';
 import ThoughtChain from '../../components/ThoughtChain';
@@ -302,6 +303,9 @@ const RemoteOperator = () => {
             return (
               // secretlint-disable-next-line @secretlint/secretlint-rule-pattern
               <div key={idx}>
+                {message.reasoningContent && (
+                  <ReasoningToggle reasoning={message.reasoningContent} />
+                )}
                 {predictionParsed?.length ? (
                   <ThoughtChain
                     steps={predictionParsed}

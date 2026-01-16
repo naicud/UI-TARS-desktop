@@ -102,7 +102,9 @@ export const useRunAgent = () => {
       }),
     ]);
 
+    console.log('[useRunAgent] Calling api.runAgent()...');
     await api.runAgent();
+    console.log('[useRunAgent] api.runAgent() returned');
 
     callback();
   };

@@ -74,13 +74,26 @@ export class SessionManager {
     return updatedSession;
   }
 
-  // 删除会话
+  // Delete session
   async deleteSession(id: string): Promise<boolean> {
     const session = await this.getSession(id);
     if (!session) return false;
 
     await del(id, sessionStore);
     return true;
+  }
+
+  // Clear all sessions
+  async clearAllSessions(): Promise<void> {
+    const keys = await entries(sessionStore);
+    await Promise.all(keys.map(([key]) => del(key, sessionStore)));
+  }
+
+  // Get estimated usage in bytes
+  async getSessionUsage(): Promise<number> {
+    const items = await entries(sessionStore);
+    const jsonString = JSON.stringify(items);
+    return new Blob([jsonString]).size;
   }
 }
 

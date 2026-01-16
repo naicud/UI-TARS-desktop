@@ -23,6 +23,7 @@ import {
   ErrorMessage,
   HumanTextMessage,
   LoadingText,
+  ReasoningToggle,
   ScreenshotMessage,
 } from '../../components/RunMessages/Messages';
 import ThoughtChain from '../../components/ThoughtChain';
@@ -248,6 +249,9 @@ const LocalOperator = () => {
 
             return (
               <div key={idx}>
+                {message.reasoningContent && (
+                  <ReasoningToggle reasoning={message.reasoningContent} />
+                )}
                 {predictionParsed?.length ? (
                   <ThoughtChain
                     steps={predictionParsed}

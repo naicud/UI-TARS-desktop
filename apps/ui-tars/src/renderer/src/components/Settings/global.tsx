@@ -11,6 +11,7 @@ import {
   Sparkles,
   FileText,
   Settings,
+  HardDrive,
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,6 +28,7 @@ import { ChatSettings } from './category/chat';
 import { LocalBrowserSettings } from './category/localBrowser';
 import { ReportSettings } from './category/report';
 import { GeneralSettings } from './category/general';
+import { StorageSettings } from './category/storage';
 
 interface GlobalSettingsStore {
   isOpen: boolean;
@@ -90,6 +92,13 @@ export const GlobalSettings = () => {
                 <Settings strokeWidth={2} />
                 General Settings
               </TabsTrigger>
+              <TabsTrigger
+                value="storage"
+                className="w-full justify-start gap-2 px-2 py-1.5 mb-2 !shadow-none font-normal data-[state=active]:font-medium data-[state=active]:bg-accent data-[state=active]:text-accent-foreground hover:bg-accent/50"
+              >
+                <HardDrive strokeWidth={2} />
+                Storage
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -129,6 +138,13 @@ export const GlobalSettings = () => {
               <h2 className="text-xl font-semibold mb-3">General Settings</h2>
               <Separator className="mb-4" />
               <GeneralSettings />
+            </TabsContent>
+            <TabsContent value="storage" className="mt-0">
+              <ScrollArea className="h-[calc(80vh-48px)]">
+                <h2 className="text-xl font-semibold mb-3">Storage</h2>
+                <Separator className="mb-4" />
+                <StorageSettings />
+              </ScrollArea>
             </TabsContent>
           </div>
         </Tabs>

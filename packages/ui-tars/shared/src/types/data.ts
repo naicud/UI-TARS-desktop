@@ -7,6 +7,8 @@ import { Message, PredictionParsed, GUIAgentError, StatusEnum } from './index';
 import { ShareVersion } from './share';
 
 export interface Conversation extends Message {
+  /** LLM reasoning/thinking content for monitoring */
+  reasoningContent?: string;
   timing?: {
     start: number;
     end: number;

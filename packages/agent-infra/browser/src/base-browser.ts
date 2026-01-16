@@ -262,11 +262,16 @@ export abstract class BaseBrowser implements BrowserInterface {
 
     // Get all pages and find the last active page
     const pages = await this.browser.pages();
-    this.logger.info('getActivePage: all of pages lenght:', pages.length);
+    this.logger.info('getActivePage: all of pages length:', pages.length);
 
+    // SOLID: Don't create pages here - that's TabSessionManager's responsibility
+    // This method should only FIND existing pages
     if (pages.length === 0) {
-      this.activePage = await this.createPage();
-      return this.activePage;
+      // Instead of creating a page, throw an error
+      // The caller (TabSessionManager) will handle page creation
+      throw new Error(
+        'No pages available. Use TabSessionManager to create pages.',
+      );
     }
 
     // Find the last responding page

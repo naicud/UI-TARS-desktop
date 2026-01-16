@@ -101,6 +101,7 @@ export class UITarsModel extends Model {
     headers?: Record<string, string>,
   ): Promise<{
     prediction: string;
+    reasoningContent?: string;
     costTime?: number;
     costTokens?: number;
     responseId?: string;
@@ -283,16 +284,28 @@ export class UITarsModel extends Model {
     );
 
     // Log the full response for debugging
-    logger.info('[ChatCompletionsAPI] [response]: ', JSON.stringify(result, null, 2));
-    logger.info('[ChatCompletionsAPI] [choices]: ', JSON.stringify(result.choices, null, 2));
-    logger.info('[ChatCompletionsAPI] [message]: ', JSON.stringify(result.choices?.[0]?.message, null, 2));
+    logger.info(
+      '[ChatCompletionsAPI] [response]: ',
+      JSON.stringify(result, null, 2),
+    );
+    logger.info(
+      '[ChatCompletionsAPI] [choices]: ',
+      JSON.stringify(result.choices, null, 2),
+    );
+    logger.info(
+      '[ChatCompletionsAPI] [message]: ',
+      JSON.stringify(result.choices?.[0]?.message, null, 2),
+    );
 
     // Extract content - fallback to reasoning_content if content is null (Gemini models behavior)
     const message = result.choices?.[0]?.message;
-    const content = message?.content ?? (message as any)?.reasoning_content ?? '';
+    const content =
+      message?.content ?? (message as any)?.reasoning_content ?? '';
+    const reasoningContent = (message as any)?.reasoning_content;
 
     return {
       prediction: content,
+      reasoningContent,
       costTime: Date.now() - startTime,
       costTokens: result.usage?.total_tokens ?? 0,
     };
@@ -358,7 +371,8 @@ export class UITarsModel extends Model {
       throw err;
     }
 
-    const { prediction, costTime, costTokens, responseId } = result;
+    const { prediction, reasoningContent, costTime, costTokens, responseId } =
+      result;
 
     try {
       const { parsed: parsedPredictions } = actionParser({
@@ -371,6 +385,7 @@ export class UITarsModel extends Model {
       return {
         prediction,
         parsedPredictions,
+        reasoningContent,
         costTime,
         costTokens,
         responseId,

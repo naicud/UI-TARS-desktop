@@ -26,6 +26,7 @@ import {
 
 import computerUseImg from '@resources/home_img/computer_use.png?url';
 import browserUseImg from '@resources/home_img/browser_use.png?url';
+import { HYBRID_OPERATOR } from '@renderer/const'; // Import constant
 import { sleep } from '@ui-tars/shared/utils';
 
 import { FreeTrialDialog } from '../../components/AlertDialog/freeTrialDialog';
@@ -161,7 +162,9 @@ const Home = () => {
         <h1 className="text-2xl font-semibold mt-1 mb-8">
           Welcome to Jarvis Desktop
         </h1>
-        <Alert className="mb-4 w-[824px]">
+        <Alert className="mb-4 w-[960px]">
+          {' '}
+          {/* Increased width to fit 3 cards */}
           <Info className="h-4 w-4 mt-2" />
           <AlertDescription>
             <div className="flex items-center">
@@ -198,18 +201,18 @@ const Home = () => {
           </AlertDescription>
         </Alert>
         <div className="flex gap-6">
-          <Card className="w-[400px] py-5">
+          <Card className="w-[300px] py-5">
             <CardHeader className="px-5">
               <CardTitle>Computer Operator</CardTitle>
               <CardDescription>
-                Use Jarvis to automate and complete tasks directly on
-                your computer with AI assistance.
+                Use Jarvis to automate and complete tasks directly on your
+                computer.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-5">
               <img
                 src={computerUseImg}
-                alt=""
+                alt="Computer Use"
                 className="w-full h-full aspect-video object-fill rounded-lg"
               />
             </CardContent>
@@ -222,18 +225,46 @@ const Home = () => {
               </Button>
             </CardFooter>
           </Card>
-          <Card className="w-[400px] py-5">
+
+          <Card className="w-[300px] py-5 border-primary/50 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-bl-md z-10">
+              Recommended
+            </div>
+            <CardHeader className="px-5">
+              <CardTitle>{HYBRID_OPERATOR}</CardTitle>
+              <CardDescription>
+                Automatically switches between Computer and Browser modes for
+                best performance.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-5">
+              <img
+                src={computerUseImg} // Reusing image for now
+                alt="Hybrid Mode"
+                className="w-full h-full aspect-video object-fill rounded-lg grayscale-[0.3] hover:grayscale-0 transition-all"
+              />
+            </CardContent>
+            <CardFooter className="gap-3 px-5 flex justify-between">
+              <Button
+                onClick={() => handleLocalPress(Operator.Hybrid)}
+                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0"
+              >
+                Use Hybrid (Auto)
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="w-[300px] py-5">
             <CardHeader className="px-5">
               <CardTitle>Browser Operator</CardTitle>
               <CardDescription>
-                Let Jarvis help you automate browser tasks, from
-                navigating pages to filling out forms.
+                Let Jarvis help you automate browser tasks, from pages to forms.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-5">
               <img
                 src={browserUseImg}
-                alt=""
+                alt="Browser Use"
                 className="w-full h-full aspect-video object-fill rounded-lg"
               />
             </CardContent>

@@ -11,6 +11,7 @@ import {
   Check,
   AlertCircle,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -20,7 +21,11 @@ import {
 } from '@renderer/components/ui/dropdown-menu';
 import { useSetting } from '@renderer/hooks/useSetting';
 import { useState } from 'react';
-import { BROWSER_OPERATOR, COMPUTER_OPERATOR } from '@renderer/const';
+import {
+  BROWSER_OPERATOR,
+  COMPUTER_OPERATOR,
+  HYBRID_OPERATOR,
+} from '@renderer/const';
 import { useStore } from '@renderer/hooks/useStore';
 import { api } from '@renderer/api';
 import { toast } from 'sonner';
@@ -32,23 +37,31 @@ import {
 } from '@renderer/components/ui/tooltip';
 import { Operator } from '@main/store/types';
 
-const getOperatorIcon = (type: string) => {
+const getOperatorIcon = (type: Operator | string) => {
   switch (type) {
     case 'nutjs':
-      return <Monitor className="h-4 w-4 mr-2" />;
+    case Operator.LocalComputer:
+      return <Monitor className="h-4 w-4" />;
     case 'browser':
-      return <Globe className="h-4 w-4 mr-2" />;
+    case Operator.LocalBrowser:
+      return <Globe className="h-4 w-4" />;
+    case Operator.Hybrid:
+      return <Sparkles className="h-4 w-4" />;
     default:
-      return <Monitor className="h-4 w-4 mr-2" />;
+      return <Monitor className="h-4 w-4" />;
   }
 };
 
 const getOperatorLabel = (type: string) => {
   switch (type) {
     case 'nutjs':
+    case Operator.LocalComputer:
       return COMPUTER_OPERATOR;
     case 'browser':
+    case Operator.LocalBrowser:
       return BROWSER_OPERATOR;
+    case Operator.Hybrid:
+      return HYBRID_OPERATOR;
     default:
       return COMPUTER_OPERATOR;
   }
@@ -118,11 +131,11 @@ export const SelectOperator = () => {
     <div className="absolute left-4 bottom-4">
       <DropdownMenu onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8">
+          <Button variant="outline" size="sm" className="h-8 gap-2">
             {getOperatorIcon(currentOperator)}
             {getOperatorLabel(currentOperator)}
             <ChevronDown
-              className={`h-4 w-4 ml-2 transition-transform duration-200 ${
+              className={`h-4 w-4 transition-transform duration-200 ${
                 isOpen ? 'rotate-180' : ''
               }`}
             />
@@ -131,11 +144,23 @@ export const SelectOperator = () => {
         <DropdownMenuContent>
           <DropdownMenuItem
             onClick={() => handleSelect(Operator.LocalComputer)}
+            className="gap-2"
           >
-            <Monitor className="h-4 w-4 mr-2" />
+            {getOperatorIcon(Operator.LocalComputer)}
             {COMPUTER_OPERATOR}
             {currentOperator === Operator.LocalComputer && (
-              <Check className="h-4 w-4 ml-2" />
+              <Check className="h-4 w-4 ml-auto" />
+            )}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => handleSelect(Operator.Hybrid)}
+            className="gap-2"
+          >
+            {getOperatorIcon(Operator.Hybrid)}
+            {HYBRID_OPERATOR}
+            {currentOperator === Operator.Hybrid && (
+              <Check className="h-4 w-4 ml-auto" />
             )}
           </DropdownMenuItem>
 
@@ -145,12 +170,12 @@ export const SelectOperator = () => {
                 browserAvailable && handleSelect(Operator.LocalBrowser)
               }
               disabled={!browserAvailable}
-              className="flex items-center justify-start"
+              className="flex items-center gap-2"
             >
-              <Globe className="h-4 w-4 mr-2" />
+              {getOperatorIcon(Operator.LocalBrowser)}
               {BROWSER_OPERATOR}
               {currentOperator === Operator.LocalBrowser && (
-                <Check className="h-4 w-4 ml-2" />
+                <Check className="h-4 w-4 ml-auto" />
               )}
             </DropdownMenuItem>
 

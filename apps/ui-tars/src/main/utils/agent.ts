@@ -2,6 +2,7 @@ import { UITarsModelVersion } from '@ui-tars/shared/constants';
 import {
   Operator,
   SearchEngineForSettings,
+  TabCreationStrategy,
   VLMProviderV2,
 } from '../store/types';
 import {
@@ -9,6 +10,7 @@ import {
   getSystemPromptDoubao_15_15B,
   getSystemPromptDoubao_15_20B,
   getSystemPromptV1_5,
+  getHybridSystemPrompt,
 } from '../agent/prompts';
 import {
   closeScreenMarker,
@@ -18,7 +20,10 @@ import {
   showWidgetWindow,
 } from '../window/ScreenMarker';
 import { hideMainWindow, showMainWindow } from '../window';
-import { SearchEngine } from '@ui-tars/operator-browser';
+import {
+  SearchEngine,
+  TabCreationStrategy as OperatorTabStrategy,
+} from '@ui-tars/operator-browser';
 
 export const getModelVersion = (
   provider: VLMProviderV2 | undefined,
@@ -39,9 +44,14 @@ export const getModelVersion = (
 
 export const getSpByModelVersion = (
   modelVersion: UITarsModelVersion,
-  language: 'zh' | 'en',
-  operatorType: 'browser' | 'computer',
+  language: 'zh' | 'en' | 'it',
+  operatorType: 'browser' | 'computer' | 'hybrid',
 ) => {
+  // Hybrid mode gets its own specialized prompt
+  if (operatorType === 'hybrid') {
+    return getHybridSystemPrompt(language);
+  }
+
   switch (modelVersion) {
     case UITarsModelVersion.DOUBAO_1_5_20B:
       return getSystemPromptDoubao_15_20B(language, operatorType);
@@ -60,6 +70,23 @@ export const getLocalBrowserSearchEngine = (
   return (engine || SearchEngineForSettings.GOOGLE) as unknown as SearchEngine;
 };
 
+/**
+ * Convert settings TabCreationStrategy to operator TabCreationStrategy
+ */
+export const getLocalBrowserTabStrategy = (
+  strategy?: TabCreationStrategy,
+): OperatorTabStrategy => {
+  switch (strategy) {
+    case TabCreationStrategy.ALWAYS_NEW:
+      return 'always_new';
+    case TabCreationStrategy.SMART:
+      return 'smart';
+    case TabCreationStrategy.ALWAYS_REUSE:
+    default:
+      return 'always_reuse';
+  }
+};
+
 export const beforeAgentRun = async (operator: Operator) => {
   switch (operator) {
     case Operator.RemoteComputer:
@@ -74,6 +101,12 @@ export const beforeAgentRun = async (operator: Operator) => {
     case Operator.LocalBrowser:
       hideMainWindow();
       showWidgetWindow();
+      break;
+    case Operator.Hybrid:
+      // Hybrid mode: similar to LocalComputer but with browser capabilities
+      showWidgetWindow();
+      showScreenWaterFlow();
+      hideMainWindow();
       break;
     default:
       break;
@@ -94,6 +127,12 @@ export const afterAgentRun = (operator: Operator) => {
       break;
     case Operator.LocalBrowser:
       hideWidgetWindow();
+      showMainWindow();
+      break;
+    case Operator.Hybrid:
+      hideWidgetWindow();
+      closeScreenMarker();
+      hideScreenWaterFlow();
       showMainWindow();
       break;
     default:
